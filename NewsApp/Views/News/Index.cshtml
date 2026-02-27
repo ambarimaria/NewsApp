@@ -1,0 +1,164 @@
+﻿@model HeadlinesViewModel
+@{
+    ViewData["Title"] = $"{System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.SelectedCategory)} Headlines";
+    ViewData["ActivePage"] = "Headlines";
+    ViewData["ActiveCategory"] = Model.SelectedCategory;
+
+    var routeValues = new Dictionary<string, string?>
+    {
+        ["category"] = Model.SelectedCategory,
+        ["country"]  = Model.SelectedCountry
+    };
+}
+
+<!-- Page Header -->
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div>
+        <h1 class="page-heading mb-1">
+            <i class="fas @NewsConstants.GetCategoryIcon(Model.SelectedCategory) text-accent me-2"></i>
+            @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(Model.SelectedCategory)
+            <span class="text-secondary fw-normal">Headlines</span>
+            <span class="fs-5 fw-normal text-secondary ms-2">
+                &mdash; <i class="fas fa-globe me-1 text-accent" style="font-size:.9rem"></i>@Model.CountryDisplayName
+            </span>
+        </h1>
+        @if (Model.Pagination.TotalResults > 0)
+        {
+            <p class="text-secondary mb-0 small d-flex align-items-center gap-2 flex-wrap">
+                <span>@Model.Pagination.TotalResults.ToString("N0") articles &nbsp;·&nbsp; Page @Model.Pagination.CurrentPage of @Model.Pagination.TotalPages</span>
+                @if (Model.IsFromCache)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle py-1">
+                        <i class="fas fa-bolt me-1"></i>Cached
+                    </span>
+                }
+                @{
+                    var (stratLabel, stratColor) = Model.FetchStrategy switch
+                    {
+                        "sources" => ("via Sources", "bg-info-subtle text-info border-info-subtle"),
+                        "search"  => ("via Search Fallback", "bg-warning-subtle text-warning border-warning-subtle"),
+                        _         => ("", "")
+                    };
+                }
+                @if (!string.IsNullOrEmpty(stratLabel))
+                {
+                    <span class="badge @stratColor border py-1">
+                        <i class="fas fa-info-circle me-1"></i>@stratLabel
+                    </span>
+                }
+            </p>
+        }
+    </div>
+
+    <!-- Country filter -->
+    <form asp-action="Index" method="get" class="d-flex align-items-center gap-2">
+        <input type="hidden" name="category" value="@Model.SelectedCategory" />
+        <label class="text-secondary small text-nowrap">
+            <i class="fas fa-globe me-1"></i>Country
+        </label>
+        <select name="country"
+                class="form-select form-select-sm bg-dark-subtle border-secondary text-light"
+                onchange="this.form.submit()"
+                style="min-width:180px">
+            @foreach (var kv in Model.AvailableCountries)
+            {
+                @* <option value="@kv.Key" @(kv.Key == Model.SelectedCountry ? "selected" : "")>
+                    @kv.Value
+                </option> *@
+                <option value="@kv.Key" selected="@(kv.Key == Model.SelectedCountry)">
+                    @kv.Value
+                </option>
+            }
+        </select>
+    </form>
+</div>
+
+<!-- Error Alert -->
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger d-flex align-items-start gap-3" role="alert">
+        <i class="fas fa-triangle-exclamation fa-lg mt-1 flex-shrink-0"></i>
+        <div>
+            <strong>Could not load headlines</strong><br />
+            <span class="text-secondary small">@Model.ErrorMessage</span>
+        </div>
+    </div>
+}
+
+<!-- Featured (first article) + Grid -->
+@if (Model.Articles.Any())
+{
+    var featured = Model.Articles.First();
+    var rest = Model.Articles.Skip(1).ToList();
+
+    @if (Model.Pagination.CurrentPage == 1 && featured.HasImage)
+    {
+        <!-- Featured Hero -->
+        
+            string fUrl  = Uri.EscapeDataString(featured.Url);
+            string fTitle = Uri.EscapeDataString(featured.Title);
+            string fDesc  = Uri.EscapeDataString(featured.Description ?? "");
+            string fImg   = Uri.EscapeDataString(featured.ImageUrl ?? "");
+            string fAuth  = Uri.EscapeDataString(featured.DisplayAuthor);
+            string fSrc   = Uri.EscapeDataString(featured.SourceName);
+            string fDate  = Uri.EscapeDataString(featured.PublishedAt?.ToString("o") ?? "");
+        
+        <div class="featured-hero mb-4">
+            <a href="/News/Detail?url=@fUrl&title=@fTitle&description=@fDesc&image=@fImg&author=@fAuth&source=@fSrc&publishedAt=@fDate"
+               class="text-decoration-none">
+                <div class="featured-hero-inner"
+                     style="background-image:url('@featured.ImageUrl')">
+                    <div class="featured-hero-overlay">
+                        <div class="featured-hero-content">
+                            <span class="source-badge mb-2 d-inline-block">
+                                <i class="fas fa-circle-dot me-1" style="font-size:.5rem"></i>
+                                @featured.SourceName
+                            </span>
+                            <h2 class="featured-hero-title text-white">@featured.Title</h2>
+                            <p class="text-white-50 d-none d-md-block">@featured.ShortDescription</p>
+                            <div class="d-flex gap-3 text-white-50 small">
+                                <span><i class="fas fa-user-pen me-1"></i>@featured.DisplayAuthor</span>
+                                <span><i class="far fa-clock me-1"></i>@featured.TimeAgo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    }
+    else
+    {
+        rest = Model.Articles;
+    }
+
+    <!-- Article Grid -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 mb-4">
+        @foreach (var article in rest)
+        {
+            <div class="col">
+                @await Html.PartialAsync("_ArticleCard", article)
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    
+        ViewData["PaginationRouteValues"]  = routeValues;
+        ViewData["PaginationAction"]       = "Index";
+        ViewData["PaginationController"]   = "News";
+    
+    @await Html.PartialAsync("_Pagination", Model.Pagination)
+}
+else if (string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-newspaper fa-4x text-secondary mb-4 d-block"></i>
+        <h4 class="text-secondary">No headlines found</h4>
+        <p class="text-secondary">Try selecting a different category or country.</p>
+        <a asp-action="Index" asp-route-category="general" asp-route-country="us"
+           class="btn btn-accent mt-2">
+            Reset Filters
+        </a>
+    </div>
+}
+

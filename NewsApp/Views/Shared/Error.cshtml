@@ -1,0 +1,31 @@
+﻿@model NewsApp.Models.ViewModels.ErrorViewModel
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center py-5">
+    <div class="col-md-7 col-lg-6 text-center">
+        <div class="error-code display-1 fw-bold text-accent mb-0">
+            @(Model.StatusCode?.ToString() ?? "!")
+        </div>
+        <h2 class="h3 fw-bold mb-3">@Model.Title</h2>
+        <div class="alert alert-dark border border-secondary text-start mb-4">
+            <i class="fas fa-circle-info me-2 text-accent"></i>
+            @Model.Message
+        </div>
+        @if (!string.IsNullOrEmpty(Model.RequestId))
+        {
+            <p class="text-secondary small mb-4">Request ID: <code>@Model.RequestId</code></p>
+        }
+        <div class="d-flex gap-3 justify-content-center">
+            <a asp-controller="News" asp-action="Index" class="btn btn-accent">
+                <i class="fas fa-home me-2"></i>Back to Headlines
+            </a>
+            <button onclick="history.back()" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Go Back
+            </button>
+        </div>
+    </div>
+</div>
+

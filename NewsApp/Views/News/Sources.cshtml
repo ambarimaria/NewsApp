@@ -1,0 +1,152 @@
+﻿@model SourcesViewModel
+@{
+    ViewData["Title"] = "News Sources";
+    ViewData["ActivePage"] = "Sources";
+}
+
+<h1 class="page-heading mb-4">
+    <i class="fas fa-tower-broadcast text-accent me-2"></i>News Sources
+</h1>
+
+<!-- Filter Bar -->
+<form asp-action="Sources" method="get" class="filter-bar mb-5 p-4 rounded-3 border border-secondary-subtle">
+    <div class="row g-3 align-items-end">
+        <div class="col-sm-6 col-lg-3">
+            <label class="form-label small text-secondary">Category</label>
+            <select name="category" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                <option value="">All Categories</option>
+                @foreach (var cat in Model.AvailableCategories)
+                {
+                    @* <option value="@cat" @(cat == Model.FilterCategory ? "selected" : "")>
+                        @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cat)
+                    </option> *@
+                    <option value="@cat" selected="@(cat == Model.FilterCategory)">
+                        @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cat)
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <label class="form-label small text-secondary">Language</label>
+            <select name="language" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                <option value="">All Languages</option>
+                @foreach (var lang in NewsConstants.Languages)
+                {
+                    @* <option value="@lang.Key" @(lang.Key == Model.FilterLanguage ? "selected" : "")>@lang.Value</option> *@
+                    <option value="@lang.Key" selected="@(lang.Key == Model.FilterLanguage)">@lang.Value</option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3">
+            <label class="form-label small text-secondary">Country</label>
+            <select name="country" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                <option value="">All Countries</option>
+                @foreach (var c in NewsConstants.Countries)
+                {
+                    @* <option value="@c.Key" @(c.Key == Model.FilterCountry ? "selected" : "")>@c.Value</option> *@
+                    <option value="@c.Key" selected="@(c.Key == Model.FilterCountry)">
+                        @c.Value
+                    </option>
+                }
+            </select>
+        </div>
+        <div class="col-sm-6 col-lg-3 d-flex gap-2">
+            <button type="submit" class="btn btn-accent btn-sm flex-fill">
+                <i class="fas fa-filter me-1"></i> Filter
+            </button>
+            <a asp-action="Sources" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-xmark"></i>
+            </a>
+        </div>
+    </div>
+</form>
+
+<!-- Error -->
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<!-- Results count -->
+@if (Model.Sources.Any())
+{
+    <p class="text-secondary small mb-3">
+        Showing <strong class="text-light">@Model.Sources.Count</strong> sources
+        @if (!string.IsNullOrEmpty(Model.FilterCategory))
+        {
+            <span>in <strong class="text-accent">@Model.FilterCategory</strong></span>
+        }
+    </p>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
+        @foreach (var source in Model.Sources)
+        {
+            <div class="col">
+                <div class="source-card h-100">
+                    <div class="d-flex align-items-start justify-content-between mb-2">
+                        <div class="source-icon">
+                            <i class="fas @NewsConstants.GetCategoryIcon(source.Category ?? "general")"></i>
+                        </div>
+                        @if (!string.IsNullOrEmpty(source.Url))
+                        {
+                            <a href="@source.Url" target="_blank" rel="noopener"
+                               class="btn btn-xs btn-outline-secondary">
+                                <i class="fas fa-arrow-up-right-from-square"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <h6 class="fw-semibold mb-1">@source.Name</h6>
+
+                    @if (!string.IsNullOrEmpty(source.Description))
+                    {
+                        <p class="text-secondary small mb-2">
+                            @(source.Description.Length > 80 ? source.Description[..80] + "…" : source.Description)
+                        </p>
+                    }
+
+                    <div class="d-flex flex-wrap gap-1 mt-auto">
+                        @if (!string.IsNullOrEmpty(source.Category))
+                        {
+                            <span class="badge bg-dark-subtle border border-secondary-subtle text-secondary small">
+                                @source.Category
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(source.Language))
+                        {
+                            <span class="badge bg-dark-subtle border border-secondary-subtle text-secondary small">
+                                @source.Language.ToUpper()
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(source.Country))
+                        {
+                            <span class="badge bg-dark-subtle border border-secondary-subtle text-secondary small">
+                                @source.Country.ToUpper()
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Browse headlines from this source -->
+                    <div class="mt-3 pt-3 border-top border-secondary-subtle">
+                        @{
+                            string sUrl  = Uri.EscapeDataString(source.Id);
+                        }
+                        <a asp-controller="News" asp-action="Index"
+                           class="btn btn-sm btn-outline-accent w-100 text-nowrap">
+                            <i class="fas fa-newspaper me-1"></i> Browse Headlines
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else if (string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-tower-broadcast fa-4x text-secondary mb-3 d-block"></i>
+        <h5 class="text-secondary">No sources found</h5>
+        <a asp-action="Sources" class="btn btn-accent mt-2">Clear Filters</a>
+    </div>
+}
+

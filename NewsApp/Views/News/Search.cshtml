@@ -1,0 +1,185 @@
+﻿@model SearchViewModel
+@{
+    ViewData["Title"] = string.IsNullOrEmpty(Model.Query) ? "Search" : $"Search: {Model.Query}";
+    ViewData["ActivePage"] = "Search";
+    ViewData["CurrentQuery"] = Model.Query;
+
+    var routeValues = new Dictionary<string, string?>
+    {
+        ["q"]        = Model.Query,
+        ["sortBy"]   = Model.SortBy,
+        ["language"] = Model.Language,
+        ["source"]   = Model.SelectedSource,
+        ["from"]     = Model.FromDate,
+        ["to"]       = Model.ToDate
+    };
+}
+
+<h1 class="page-heading mb-4">
+    <i class="fas fa-magnifying-glass text-accent me-2"></i>Search Articles
+</h1>
+
+<!-- ── Search Form ─────────────────────────────────────────────────────────── -->
+<div class="search-panel mb-5">
+    <form asp-action="Search" method="get" id="searchForm">
+        <!-- Main query -->
+        <div class="input-group input-group-lg mb-3">
+            <span class="input-group-text bg-dark-subtle border-secondary">
+                <i class="fas fa-magnifying-glass text-secondary"></i>
+            </span>
+            <input type="search"
+                   name="q"
+                   class="form-control bg-dark-subtle border-secondary text-light"
+                   placeholder="Search headlines, topics, people…"
+                   value="@Model.Query"
+                   autocomplete="off"
+                   autofocus />
+            <button class="btn btn-accent px-4 fw-semibold" type="submit">Search</button>
+        </div>
+
+        <!-- Advanced filters (collapsible) -->
+        <div class="mb-2">
+            <button class="btn btn-sm btn-link text-secondary text-decoration-none p-0"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#advancedFilters">
+                <i class="fas fa-sliders me-1"></i>Advanced Filters
+                <i class="fas fa-chevron-down ms-1 small"></i>
+            </button>
+        </div>
+
+        <div class="collapse @(!string.IsNullOrEmpty(Model.SelectedSource) || !string.IsNullOrEmpty(Model.FromDate) ? "show" : "")"
+             id="advancedFilters">
+            <div class="row g-3 pb-2">
+                <!-- Sort -->
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label small text-secondary">Sort By</label>
+                    <select name="sortBy" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                        @foreach (var opt in NewsConstants.SortOptions)
+                        {
+                            @* <option value="@opt.Key" @(opt.Key == Model.SortBy ? "selected" : "")>@opt.Value</option> *@
+                            <option value="@opt.Key" selected="@(opt.Key == Model.SortBy)">@opt.Value</option>
+                        }
+                    </select>
+                </div>
+                <!-- Language -->
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label small text-secondary">Language</label>
+                    <select name="language" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                        @foreach (var lang in NewsConstants.Languages)
+                        {
+                            @* <option value="@lang.Key" @(lang.Key == Model.Language ? "selected" : "")>@lang.Value</option> *@
+                            <option value="@lang.Key" selected="@(lang.Key == Model.Language)">@lang.Value</option>
+                        }
+                    </select>
+                </div>
+                <!-- From Date -->
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label small text-secondary">From Date</label>
+                    <input type="date" name="from"
+                           class="form-control form-control-sm bg-dark-subtle border-secondary text-light"
+                           value="@Model.FromDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <!-- To Date -->
+                <div class="col-sm-6 col-lg-3">
+                    <label class="form-label small text-secondary">To Date</label>
+                    <input type="date" name="to"
+                           class="form-control form-control-sm bg-dark-subtle border-secondary text-light"
+                           value="@Model.ToDate" max="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                </div>
+                <!-- Source -->
+                @if (Model.Sources.Any())
+                {
+                    <div class="col-sm-6 col-lg-3">
+                        <label class="form-label small text-secondary">Source</label>
+                        <select name="source" class="form-select form-select-sm bg-dark-subtle border-secondary text-light">
+                            <option value="">All Sources</option>
+                            @foreach (var src in Model.Sources)
+                            {
+                                @* <option value="@src.Id" @(src.Id == Model.SelectedSource ? "selected" : "")>@src.Name</option> *@
+                                <option value="@src.Id" selected="@(src.Id == Model.SelectedSource)">@src.Name</option>
+                            }
+                        </select>
+                    </div>
+                }
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Error -->
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger d-flex gap-3 align-items-start">
+        <i class="fas fa-triangle-exclamation fa-lg mt-1 flex-shrink-0"></i>
+        <div><strong>Search failed</strong><br /><span class="small text-secondary">@Model.ErrorMessage</span></div>
+    </div>
+}
+
+<!-- Results -->
+@if (Model.Articles.Any())
+{
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h5 class="mb-0">
+            Results for <span class="text-accent">"@Model.Query"</span>
+        </h5>
+        <span class="text-secondary small">
+            @Model.Pagination.TotalResults.ToString("N0") results
+            @if (Model.IsFromCache)
+            {
+                <span class="badge bg-success-subtle text-success border border-success-subtle ms-2">
+                    <i class="fas fa-bolt me-1"></i>Cached
+                </span>
+            }
+        </span>
+    </div>
+
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3 mb-4">
+        @foreach (var article in Model.Articles)
+        {
+            <div class="col">
+                @await Html.PartialAsync("_ArticleCard", article)
+            </div>
+        }
+    </div>
+
+    
+        ViewData["PaginationRouteValues"]  = routeValues;
+        ViewData["PaginationAction"]       = "Search";
+        ViewData["PaginationController"]   = "News";
+    
+    @await Html.PartialAsync("_Pagination", Model.Pagination)
+}
+else if (!string.IsNullOrEmpty(Model.Query) && string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-magnifying-glass fa-4x text-secondary mb-4 d-block"></i>
+        <h5 class="text-secondary">No results for "@Model.Query"</h5>
+        <p class="text-secondary small">Try different keywords, adjust the date range, or remove filters.</p>
+    </div>
+}
+else if (string.IsNullOrEmpty(Model.Query))
+{
+    <!-- Search tips when query is empty -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <h6 class="text-secondary text-uppercase fw-semibold small mb-3">Search Tips</h6>
+        </div>
+        @foreach (var tip in new[] {
+            ("fa-quote-left",  "Use quotes",     "\"exact phrase\" for precise matches"),
+            ("fa-minus",       "Exclude words",  "tesla -elon to exclude a term"),
+            ("fa-plus",        "Require words",  "+bitcoin +crypto to require both"),
+            ("fa-calendar",    "Filter by date", "Use the date range filter above"),
+        })
+        {
+            <div class="col-sm-6 col-lg-3">
+                <div class="tip-card">
+                    <i class="fas @tip.Item1 text-accent mb-2 d-block"></i>
+                    <h6 class="small fw-semibold mb-1">@tip.Item2</h6>
+                    <p class="text-secondary" style="font-size:.8rem">@tip.Item3</p>
+                </div>
+            </div>
+        }
+    </div>
+}
+

@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NewsApp – Latest headlines powered by NewsAPI" />
+    <title>@(ViewData["Title"] != null ? $"{ViewData["Title"]} | NewsApp" : "NewsApp")</title>
+
+    <!-- Bootstrap 5 Dark -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome 6 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+
+<!-- ── Top Navbar ──────────────────────────────────────────────────────────── -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top" id="mainNavbar">
+    <div class="container-xxl">
+        <!-- Brand -->
+        <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="News" asp-action="Index">
+            <div class="brand-icon">
+                <i class="fas fa-rss"></i>
+            </div>
+            <span class="brand-text">NewsApp</span>
+        </a>
+
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navCollapse" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navCollapse">
+            <!-- Nav links -->
+            <ul class="navbar-nav me-auto ms-3 gap-1">
+                <li class="nav-item">
+                    <a class="nav-link nav-pill @(ViewData["ActivePage"]?.ToString() == "Headlines" ? "active" : "")"
+                       asp-controller="News" asp-action="Index">
+                        <i class="fas fa-newspaper me-1"></i> Headlines
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill @(ViewData["ActivePage"]?.ToString() == "Search" ? "active" : "")"
+                       asp-controller="News" asp-action="Search">
+                        <i class="fas fa-magnifying-glass me-1"></i> Search
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link nav-pill @(ViewData["ActivePage"]?.ToString() == "Sources" ? "active" : "")"
+                       asp-controller="News" asp-action="Sources">
+                        <i class="fas fa-tower-broadcast me-1"></i> Sources
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Inline quick search -->
+            <form asp-controller="News" asp-action="Search" method="get"
+                  class="d-flex quick-search-form">
+                <div class="input-group">
+                    <input class="form-control form-control-sm bg-dark-subtle border-secondary text-light"
+                           type="search" name="q"
+                           placeholder="Quick search…"
+                           value="@ViewData["CurrentQuery"]"
+                           autocomplete="off" />
+                    <button class="btn btn-accent btn-sm px-3" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Category Ribbon ────────────────────────────────────────────────────── -->
+<div class="category-ribbon border-bottom border-secondary-subtle">
+    <div class="container-xxl">
+        <div class="d-flex gap-2 py-2 overflow-auto flex-nowrap scrollbar-hide">
+            @foreach (var cat in NewsConstants.Categories)
+            {
+                <a asp-controller="News" asp-action="Index"
+                   asp-route-category="@cat"
+                   class="category-chip @(ViewData["ActiveCategory"]?.ToString() == cat ? "active" : "")">
+                    <i class="fas @NewsConstants.GetCategoryIcon(cat) me-1"></i>
+                    @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cat)
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ── Main Content ───────────────────────────────────────────────────────── -->
+<main class="py-4">
+    <div class="container-xxl">
+        @RenderBody()
+    </div>
+</main>
+
+<!-- ── Footer ────────────────────────────────────────────────────────────── -->
+<footer class="site-footer border-top border-secondary-subtle mt-5 py-5">
+    <div class="container-xxl">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="brand-icon brand-icon-sm">
+                        <i class="fas fa-rss fa-xs"></i>
+                    </div>
+                    <span class="fw-bold">NewsApp</span>
+                </div>
+                <p class="text-secondary small">
+                    Real-time news headlines and search powered by
+                    <a href="https://newsapi.org" target="_blank" rel="noopener"
+                       class="text-accent text-decoration-none">NewsAPI.org</a>.
+                </p>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-uppercase text-secondary fw-semibold small mb-3">Navigate</h6>
+                <ul class="list-unstyled d-flex flex-column gap-2">
+                    <li><a asp-controller="News" asp-action="Index" class="footer-link">Headlines</a></li>
+                    <li><a asp-controller="News" asp-action="Search" class="footer-link">Search Articles</a></li>
+                    <li><a asp-controller="News" asp-action="Sources" class="footer-link">News Sources</a></li>
+                </ul>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-uppercase text-secondary fw-semibold small mb-3">Categories</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var cat in NewsConstants.Categories.Take(6))
+                    {
+                        <a asp-controller="News" asp-action="Index" asp-route-category="@cat"
+                           class="badge bg-dark-subtle text-secondary border border-secondary-subtle text-decoration-none py-1 px-2">
+                            @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cat)
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+        <hr class="border-secondary-subtle my-4" />
+        <p class="text-center text-secondary small mb-0">
+            &copy; @DateTime.Now.Year NewsApp &mdash; Built with ASP.NET Core 8 MVC
+        </p>
+    </div>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+<!-- Site JS -->
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+

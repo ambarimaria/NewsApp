@@ -1,66 +1,35 @@
 ﻿@model NewsApp.Models.ViewModels.Article
-
 @{
-    string encodedUrl   = Uri.EscapeDataString(Model.Url);
-    string encodedTitle = Uri.EscapeDataString(Model.Title);
-    string encodedDesc  = Uri.EscapeDataString(Model.Description ?? "");
-    string encodedImg   = Uri.EscapeDataString(Model.ImageUrl ?? "");
-    string encodedAuth  = Uri.EscapeDataString(Model.DisplayAuthor);
-    string encodedSrc   = Uri.EscapeDataString(Model.SourceName);
-    string encodedDate  = Uri.EscapeDataString(Model.PublishedAt?.ToString("o") ?? "");
+    string eu=Uri.EscapeDataString(Model.Url),
+           et=Uri.EscapeDataString(Model.Title),
+           ed=Uri.EscapeDataString(Model.Description??""),
+           ei=Uri.EscapeDataString(Model.ImageUrl??""),
+           ea=Uri.EscapeDataString(Model.DisplayAuthor),
+           es=Uri.EscapeDataString(Model.SourceName),
+           epd=Uri.EscapeDataString(Model.PublishedAt?.ToString("o")??"");
+    string dUrl=$"/News/Detail?url={eu}&title={et}&description={ed}&image={ei}&author={ea}&source={es}&publishedAt={epd}";
 }
-
-<article class="news-card h-100">
-    <!-- Image -->
-    <a href="/News/Detail?url=@encodedUrl&title=@encodedTitle&description=@encodedDesc&image=@encodedImg&author=@encodedAuth&source=@encodedSrc&publishedAt=@encodedDate"
-       class="news-card-image-link">
-        @if (Model.HasImage)
-        {
-            <img src="@Model.ImageUrl"
-                 alt="@Model.Title"
-                 class="news-card-image"
-                 loading="lazy"
-                 onerror="this.parentElement.innerHTML='<div class=\'news-card-image-placeholder\'><i class=\'fas fa-newspaper\'></i></div>'" />
+<article class="news-card">
+    <a href="@dUrl" class="news-card-img-wrap">
+        @if (Model.HasImage) {
+            <img class="news-card-img" src="@Model.ImageUrl" alt="@Model.Title" loading="lazy"
+                 onerror="this.closest('.news-card-img-wrap').innerHTML='<div class=\'news-card-img-placeholder\'><i class=\'fas fa-newspaper\'></i></div>'"/>
+        } else {
+            <div class="news-card-img-placeholder"><i class="fas fa-newspaper"></i></div>
         }
-        else
-        {
-            <div class="news-card-image-placeholder">
-                <i class="fas fa-newspaper"></i>
-            </div>
-        }
+        <span class="news-card-time-chip">@Model.TimeAgo</span>
     </a>
-
     <div class="news-card-body">
-        <!-- Source + Time -->
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="source-badge">
-                <i class="fas fa-circle-dot me-1" style="font-size:0.5rem"></i>
-                @Model.SourceName
+        <div class="news-card-source">@Model.SourceName</div>
+        <h3 class="news-card-title"><a href="@dUrl">@Model.Title</a></h3>
+        <p class="news-card-desc">@Model.ShortDescription</p>
+        <div class="news-card-footer">
+            <span class="news-card-author">
+                <i class="fas fa-user-pen" style="font-size:.5rem;margin-right:.3rem"></i>
+                @(Model.Author?.Length>22 ? Model.Author[..22]+"…" : Model.DisplayAuthor)
             </span>
-            <span class="text-secondary" style="font-size:0.75rem">
-                <i class="far fa-clock me-1"></i>@Model.TimeAgo
-            </span>
-        </div>
-
-        <!-- Title -->
-        <h6 class="news-card-title">
-            <a href="/News/Detail?url=@encodedUrl&title=@encodedTitle&description=@encodedDesc&image=@encodedImg&author=@encodedAuth&source=@encodedSrc&publishedAt=@encodedDate"
-               class="text-decoration-none text-light stretched-link-title">
-                @Model.Title
-            </a>
-        </h6>
-
-        <!-- Description -->
-        <p class="news-card-desc text-secondary">@Model.ShortDescription</p>
-
-        <!-- Footer -->
-        <div class="news-card-footer d-flex justify-content-between align-items-center mt-auto">
-            <span class="text-secondary small">
-                <i class="fas fa-user-pen me-1"></i>@(Model.Author?.Length > 20 ? Model.Author[..20] + "…" : Model.DisplayAuthor)
-            </span>
-            <a href="@Model.Url" target="_blank" rel="noopener"
-               class="btn btn-outline-secondary btn-xs"
-               onclick="event.stopPropagation()">
+            <a href="@Model.Url" target="_blank" rel="noopener" class="news-card-ext-link"
+               onclick="event.stopPropagation()" title="Open original article">
                 <i class="fas fa-arrow-up-right-from-square"></i>
             </a>
         </div>
